@@ -78,7 +78,7 @@ gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app
 ## Organisation du code
 
 ```
-urgence-gabon/
+urgence-maroc/
 ├── app.py                 # Configuration Flask
 ├── main.py                # Point d'entrée
 ├── extensions.py          # Extensions (base de données, etc.)
@@ -103,11 +103,11 @@ urgence-gabon/
 ## Données incluses
 
 Le script de démonstration charge :
-- 89 pharmacies dans 9 villes gabonaises
+- 89 pharmacies dans 9 villes marocaines
 - 18 contacts d'urgence (nationaux et locaux)
 - Un message de bienvenue
 
-**Villes couvertes :** Libreville, Port-Gentil, Franceville, Oyem, Mouila, Moanda, Makokou, Koulamoutou, Ntom
+**Villes couvertes :** Casablanca, Fès, Marrakech, Rabat, Agadir, Meknes, Tangier, Essaouira, Tetouan
 
 ## Administration
 
