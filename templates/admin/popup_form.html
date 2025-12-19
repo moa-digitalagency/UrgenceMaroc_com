@@ -1,0 +1,118 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/admin/popup_form.html - Formulaire popup
+  Ce fichier permet d'ajouter ou modifier un message popup.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if popup %}Modifier le popup{% else %}Nouveau popup{% endif %} - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-2xl mx-auto px-4 py-8">
+        <div class="mb-6">
+            <a href="{{ url_for('admin.list_popups') }}" class="text-red-600 hover:text-red-700 flex items-center gap-1 text-sm mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Retour aux popups
+            </a>
+            <h1 class="text-2xl font-bold text-gray-800">{% if popup %}Modifier le popup{% else %}Nouveau popup{% endif %}</h1>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+                <input type="text" name="title" value="{{ popup.title if popup else '' }}" required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea name="description" rows="4" 
+                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">{{ popup.description if popup else '' }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Le texte principal du popup</p>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    <span class="flex items-center gap-2">
+                        <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        Bloc Avertissement (bordure rouge)
+                    </span>
+                </label>
+                <textarea name="warning_text" rows="3" 
+                          class="w-full px-4 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-red-50">{{ popup.warning_text if popup else '' }}</textarea>
+                <p class="text-xs text-gray-500 mt-1">Ce texte sera affiché dans un bloc avec bordure rouge pour attirer l'attention</p>
+            </div>
+            
+            <div class="space-y-4">
+                <label class="block text-sm font-medium text-gray-700">Image du popup</label>
+                
+                {% if popup and popup.get_image_url() %}
+                <div class="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                    <img src="{{ popup.get_image_url() }}" alt="Image actuelle" class="w-20 h-20 object-cover rounded-lg">
+                    <div class="flex-1">
+                        <p class="text-sm text-gray-600">Image actuelle</p>
+                        <label class="flex items-center gap-2 mt-1 cursor-pointer">
+                            <input type="checkbox" name="remove_image" class="w-4 h-4 text-red-600 rounded">
+                            <span class="text-sm text-red-600">Supprimer cette image</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-1">Télécharger une image</label>
+                    <input type="file" name="image_file" accept="image/*"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    <p class="text-xs text-gray-500 mt-1">Formats acceptés: PNG, JPG, JPEG, GIF, WebP</p>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ordre d'affichage</label>
+                    <input type="number" name="ordering" value="{{ popup.ordering if popup else 0 }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                </div>
+                <div class="flex items-end gap-6">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="is_active" {% if not popup or popup.is_active %}checked{% endif %}
+                               class="w-5 h-5 text-red-600 rounded focus:ring-red-500">
+                        <span class="text-sm text-gray-700">Actif</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="show_once" {% if not popup or popup.show_once %}checked{% endif %}
+                               class="w-5 h-5 text-red-600 rounded focus:ring-red-500">
+                        <span class="text-sm text-gray-700">Afficher une seule fois</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3 pt-4 border-t">
+                <a href="{{ url_for('admin.list_popups') }}" class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition">
+                    Annuler
+                </a>
+                <button type="submit" class="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition">
+                    {% if popup %}Mettre à jour{% else %}Créer le popup{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

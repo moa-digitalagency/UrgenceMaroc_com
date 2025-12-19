@@ -1,0 +1,135 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/admin/login.html - Page de connexion administrateur
+  Ce fichier affiche le formulaire de connexion pour accéder au tableau de bord.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration - UrgenceMaroc.com</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #CE1126 0%, #E63A47 50%, #B50D1F 100%);
+        }
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+    <div class="absolute inset-0 overflow-hidden">
+        <div class="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full floating"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 rounded-full floating" style="animation-delay: -3s;"></div>
+        <div class="absolute top-1/2 left-1/4 w-64 h-64 bg-white/5 rounded-full floating" style="animation-delay: -1.5s;"></div>
+    </div>
+    
+    <div class="w-full max-w-md relative z-10">
+        <div class="glass-effect rounded-3xl shadow-2xl p-8 border border-white/20">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-red-500/30 overflow-hidden border-2 border-white/30">
+                    <!-- Drapeau du Maroc -->
+                    <svg class="w-20 h-20" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Fond rouge -->
+                        <rect width="300" height="200" fill="#CE1126"/>
+                        <!-- Étoile verte à 5 branches au centre -->
+                        <g transform="translate(150, 100)">
+                            <!-- Étoile verte -->
+                            <polygon points="0,-45 14,-14 45,-14 22,11 36,45 0,22 -36,45 -22,11 -45,-14 -14,-14" fill="#006B3F" stroke="#006B3F" stroke-width="1"/>
+                            <!-- Contour blanc subtil -->
+                            <polygon points="0,-45 14,-14 45,-14 22,11 36,45 0,22 -36,45 -22,11 -45,-14 -14,-14" fill="none" stroke="white" stroke-width="0.5" opacity="0.4"/>
+                        </g>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">Administration</h1>
+                <p class="text-gray-500">Pharmacies du Maroc</p>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="mb-6 p-4 rounded-xl flex items-center gap-3 {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                        {% if category == 'error' %}
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {% else %}
+                        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        {% endif %}
+                        <span class="text-sm font-medium">{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" class="space-y-5">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nom d'utilisateur</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </span>
+                        <input type="text" name="username" required autocomplete="username"
+                               class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:bg-white transition-all">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Mot de passe</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                            </svg>
+                        </span>
+                        <input type="password" name="password" required autocomplete="current-password"
+                               class="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:bg-white transition-all">
+                    </div>
+                </div>
+                <button type="submit" 
+                        class="w-full py-4 bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold rounded-xl hover:from-red-700 hover:to-rose-700 transition-all shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                    </svg>
+                    Se connecter
+                </button>
+            </form>
+            
+            <div class="mt-8 text-center">
+                <a href="/" class="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-red-600 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Retour au site
+                </a>
+            </div>
+        </div>
+        
+        <p class="text-center text-white/60 text-sm mt-6">
+            UrgenceMaroc.com - Administration
+        </p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1500 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/admin/dashboard.html - Tableau de bord administrateur
+  Ce fichier affiche les statistiques, la gestion des pharmacies,
+  les soumissions utilisateurs et les paramètres du site.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - UrgenceMaroc.com</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .sidebar-gradient {
+            background: linear-gradient(180deg, #CE1126 0%, #E63A47 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+        }
+        .stat-card {
+            transition: all 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#FEE8E8',
+                            100: '#FCCDD2',
+                            500: '#E63A47',
+                            600: '#CE1126',
+                            700: '#B50D1F',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="flex">
+        <aside id="sidebar" class="w-72 sidebar-gradient min-h-screen flex flex-col fixed lg:sticky top-0 left-0 lg:left-auto inset-y-0 lg:inset-y-auto z-40 lg:z-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+            <div class="p-6 border-b border-white/20">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl flex items-center justify-center backdrop-blur-sm overflow-hidden">
+                        <!-- Drapeau du Maroc -->
+                        <svg class="w-12 h-12" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Fond rouge -->
+                            <rect width="300" height="200" fill="#CE1126"/>
+                            <!-- Étoile verte à 5 branches au centre -->
+                            <g transform="translate(150, 100)">
+                                <!-- Étoile verte -->
+                                <polygon points="0,-45 14,-14 45,-14 22,11 36,45 0,22 -36,45 -22,11 -45,-14 -14,-14" fill="#006B3F" stroke="#006B3F" stroke-width="1"/>
+                                <!-- Contour blanc subtil -->
+                                <polygon points="0,-45 14,-14 45,-14 22,11 36,45 0,22 -36,45 -22,11 -45,-14 -14,-14" fill="none" stroke="white" stroke-width="0.5" opacity="0.4"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-white text-lg">UrgenceMaroc.com</h1>
+                        <p class="text-sm text-white/70">Administration</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4 space-y-2">
+                <button onclick="switchAdminTab('overview')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 bg-white/20 text-white" data-tab="overview">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/>
+                    </svg>
+                    Tableau de bord
+                </button>
+                
+                <button onclick="switchAdminTab('pharmacies')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="pharmacies">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    Pharmacies
+                    <span class="ml-auto px-2 py-0.5 bg-white/20 text-white text-xs font-semibold rounded-full">{{ pharmacies|length }}</span>
+                </button>
+                
+                <button onclick="switchAdminTab('garde')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="garde">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Pharmacies de garde
+                    <span class="ml-auto px-2 py-0.5 bg-red-400 text-white text-xs font-semibold rounded-full">{{ pharmacies|selectattr('is_garde')|list|length }}</span>
+                </button>
+                
+                <button onclick="switchAdminTab('locations')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="locations">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                    </svg>
+                    Localisations
+                    {% if pending_locations %}
+                    <span class="ml-auto px-2 py-0.5 bg-blue-400 text-white text-xs font-semibold rounded-full">{{ pending_locations|length }}</span>
+                    {% endif %}
+                </button>
+                
+                <button onclick="switchAdminTab('infos')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="infos">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Corrections
+                    {% if pending_infos %}
+                    <span class="ml-auto px-2 py-0.5 bg-amber-400 text-white text-xs font-semibold rounded-full">{{ pending_infos|length }}</span>
+                    {% endif %}
+                </button>
+                
+                <button onclick="switchAdminTab('stats')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="stats">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                    Statistiques
+                </button>
+                
+                <button onclick="switchAdminTab('proposals')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="proposals">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Nouvelles pharmacies
+                    {% if pending_proposals %}
+                    <span class="ml-auto px-2 py-0.5 bg-green-400 text-white text-xs font-semibold rounded-full">{{ pending_proposals|length }}</span>
+                    {% endif %}
+                </button>
+                
+                <button onclick="switchAdminTab('suggestions')" class="admin-tab-btn w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10" data-tab="suggestions">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                    </svg>
+                    Suggestions
+                    {% if pending_suggestions %}
+                    <span class="ml-auto px-2 py-0.5 bg-purple-400 text-white text-xs font-semibold rounded-full">{{ pending_suggestions|length }}</span>
+                    {% endif %}
+                </button>
+                
+                <a href="{{ url_for('admin.list_emergency_contacts') }}" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                    Contacts d'urgence
+                </a>
+                
+                <div class="pt-4 mt-4 border-t border-white/20">
+                    <p class="px-4 text-xs text-white/50 uppercase tracking-wider mb-2">Configuration</p>
+                    
+                    <a href="{{ url_for('admin.list_popups') }}" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        Popups
+                    </a>
+                    
+                    <a href="{{ url_for('admin.list_ads') }}" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/>
+                        </svg>
+                        Publicites
+                    </a>
+                    
+                    <a href="{{ url_for('admin.ad_settings') }}" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                        Reglages Pubs
+                    </a>
+                    
+                    <a href="{{ url_for('admin.site_settings') }}" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        Paramètres
+                    </a>
+                    
+                    <a href="{{ url_for('admin.view_logs') }}" class="w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition flex items-center gap-3 text-white/80 hover:bg-white/10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Logs d'activité
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="p-4 border-t border-white/20">
+                <div class="flex items-center justify-between">
+                    <a href="/" class="text-sm text-white/80 hover:text-white flex items-center gap-2 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        Voir le site
+                    </a>
+                    <a href="{{ url_for('admin.admin_logout') }}" class="text-sm text-red-300 hover:text-red-200 flex items-center gap-2 transition">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                        </svg>
+                        Quitter
+                    </a>
+                </div>
+            </div>
+        </aside>
+        
+        <div id="sidebarOverlay" class="hidden fixed inset-0 bg-black/50 z-30 lg:hidden" onclick="toggleSidebar()"></div>
+        
+        <main class="flex-1 min-h-screen">
+            <header class="bg-white border-b shadow-sm sticky top-0 z-50">
+                <div class="px-6 py-4 flex items-center justify-between">
+                    <div class="lg:hidden flex items-center gap-3">
+                        <button onclick="toggleSidebar()" class="p-2 hover:bg-gray-100 rounded-lg transition mr-2">
+                            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+                        <div class="w-10 h-10 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" viewBox="0 0 24 24" fill="white">
+                                <path d="M7 12h10v1c0 3-2 6-5 6s-5-3-5-6v-1z"/>
+                                <path d="M6 11h12c.5 0 1 .5 1 1s-.5 1-1 1H6c-.5 0-1-.5-1-1s.5-1 1-1z"/>
+                            </svg>
+                        </div>
+                        <h1 class="font-bold text-gray-800">Administration</h1>
+                    </div>
+                    <div class="hidden lg:block">
+                        <h2 class="text-xl font-bold text-gray-800">Bienvenue dans l'administration</h2>
+                        <p class="text-sm text-gray-500">Gerez vos pharmacies et consultez les statistiques</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ url_for('admin.admin_logout') }}" class="lg:hidden px-3 py-2 text-sm text-gray-600 hover:text-red-600">Quitter</a>
+                        <div class="hidden lg:flex items-center gap-3 px-4 py-2 bg-gray-50 rounded-xl">
+                            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                            </div>
+                            <span class="text-sm font-medium text-gray-700">Administrateur</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <div class="p-6">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="mb-6 p-4 rounded-xl flex items-center gap-3 {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                            {% if category == 'error' %}
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {% else %}
+                            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            {% endif %}
+                            <span class="text-sm font-medium">{{ message }}</span>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <div id="tab-overview" class="tab-content active">
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-gray-800">{{ pharmacies|length }}</p>
+                            <p class="text-sm text-gray-500 mt-1">Total</p>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-red-600">{{ pharmacies|selectattr('is_garde')|list|length }}</p>
+                            <p class="text-sm text-gray-500 mt-1">De garde</p>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-green-600">{{ pharmacies|selectattr('latitude')|list|length }}</p>
+                            <p class="text-sm text-gray-500 mt-1">Avec GPS</p>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-purple-600">{{ pharmacies|selectattr('location_validated')|list|length }}</p>
+                            <p class="text-sm text-gray-500 mt-1">GPS Valides</p>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-indigo-600">{{ pharmacies|selectattr('is_verified')|list|length }}</p>
+                            <p class="text-sm text-gray-500 mt-1">Verifies</p>
+                        </div>
+                        <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-cyan-100 rounded-xl flex items-center justify-center">
+                                    <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-3xl font-bold text-cyan-600">{{ total_views }}</p>
+                            <p class="text-sm text-gray-500 mt-1">Consultations</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                                <div class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <h3 class="font-semibold text-gray-800">Modifications recentes</h3>
+                            </div>
+                            <div class="divide-y divide-gray-50">
+                                {% for pharmacy in recent_pharmacies %}
+                                <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                                    <div>
+                                        <p class="font-medium text-gray-800">{{ pharmacy.nom }}</p>
+                                        <p class="text-sm text-gray-500">{{ pharmacy.ville }}</p>
+                                    </div>
+                                    <span class="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-lg">{{ pharmacy.updated_at.strftime('%d/%m/%Y') if pharmacy.updated_at else '-' }}</span>
+                                </div>
+                                {% else %}
+                                <div class="px-6 py-8 text-center text-gray-500">Aucune modification recente</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                                <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                    </svg>
+                                </div>
+                                <h3 class="font-semibold text-gray-800">Top consultations</h3>
+                            </div>
+                            <div class="divide-y divide-gray-50">
+                                {% for item in top_pharmacies %}
+                                <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
+                                    <div>
+                                        <p class="font-medium text-gray-800">{{ item.nom }}</p>
+                                        <p class="text-sm text-gray-500">{{ item.ville }}</p>
+                                    </div>
+                                    <span class="px-3 py-1 bg-red-100 text-red-700 text-sm font-semibold rounded-full">{{ item.view_count }} vues</span>
+                                </div>
+                                {% else %}
+                                <div class="px-6 py-8 text-center text-gray-500">Aucune consultation enregistree</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if pending_locations or pending_infos or pending_suggestions or pending_proposals %}
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6">
+                        <div class="flex items-start gap-4">
+                            <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-amber-800 text-lg">Soumissions en attente</h4>
+                                <p class="text-amber-700 mt-1">
+                                    Vous avez <strong>{{ pending_proposals|length if pending_proposals else 0 }}</strong> proposition(s) de pharmacie,
+                                    <strong>{{ pending_locations|length }}</strong> localisation(s), 
+                                    <strong>{{ pending_infos|length }}</strong> correction(s) et
+                                    <strong>{{ pending_suggestions|length if pending_suggestions else 0 }}</strong> suggestion(s) a valider.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="tab-pharmacies" class="tab-content">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Gestion des pharmacies</h2>
+                            <p class="text-gray-500 mt-1">Ajoutez, modifiez ou supprimez des pharmacies</p>
+                        </div>
+                        <a href="{{ url_for('admin.admin_add_pharmacy') }}" 
+                           class="px-5 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl text-sm font-semibold hover:from-red-700 hover:to-rose-700 shadow-lg shadow-red-500/30 flex items-center gap-2 transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Ajouter une pharmacie
+                        </a>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-4 border-b border-gray-100">
+                            <div class="relative">
+                                <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                <input type="text" id="searchAdmin" placeholder="Rechercher une pharmacie..." 
+                                       class="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:bg-white transition"
+                                       onkeyup="filterTable()">
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full" id="pharmacyTable">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pharmacie</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ville</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Garde</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Fin garde</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">GPS</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Valide</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Verifie</th>
+                                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for pharmacy in pharmacies %}
+                                    <tr class="hover:bg-gray-50 transition pharmacy-row" id="pharmacy-row-{{ pharmacy.id }}">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-5 h-5 text-red-600" viewBox="0 0 24 24" fill="currentColor">
+                                                        <path d="M7 12h10v1c0 3-2 6-5 6s-5-3-5-6v-1z"/>
+                                                        <path d="M6 11h12c.5 0 1 .5 1 1s-.5 1-1 1H6c-.5 0-1-.5-1-1s.5-1 1-1z"/>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold text-gray-800">{{ pharmacy.nom }}</div>
+                                                    <div class="text-xs text-gray-400">{{ pharmacy.code }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg">{{ pharmacy.ville }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <button onclick="openGardeModal({{ pharmacy.id }}, '{{ pharmacy.nom|replace("'", "\\'") }}', {{ 'true' if pharmacy.is_garde else 'false' }}, 'pharmacies')" 
+                                                    class="garde-btn-{{ pharmacy.id }} p-2 rounded-xl transition {% if pharmacy.is_garde %}bg-red-100 text-red-600 hover:bg-red-200{% else %}bg-gray-100 text-gray-400 hover:bg-gray-200{% endif %}">
+                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                        <td class="px-6 py-4 text-center garde-end-{{ pharmacy.id }}">
+                                            {% if pharmacy.garde_end_date %}
+                                            <span class="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-lg">{{ pharmacy.garde_end_date.strftime('%d/%m/%Y') }}</span>
+                                            {% else %}
+                                            <span class="text-xs text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            {% if pharmacy.latitude and pharmacy.longitude %}
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-green-100 text-green-700">
+                                                <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/></svg>
+                                                Oui
+                                            </span>
+                                            {% else %}
+                                            <span class="text-gray-400 text-xs">Non</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            {% if pharmacy.latitude and pharmacy.longitude %}
+                                            <button onclick="toggleValidation({{ pharmacy.id }}, this, {{ 'true' if pharmacy.location_validated else 'false' }})" 
+                                                    class="validation-toggle p-2 rounded-xl transition {% if pharmacy.location_validated %}bg-purple-100 text-purple-600 hover:bg-purple-200{% else %}bg-gray-100 text-gray-400 hover:bg-gray-200{% endif %}">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                </svg>
+                                            </button>
+                                            {% else %}
+                                            <span class="text-gray-400 text-xs">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <button onclick="toggleVerified({{ pharmacy.id }}, this, {{ 'true' if pharmacy.is_verified else 'false' }})" 
+                                                    class="p-2 rounded-xl transition {% if pharmacy.is_verified %}bg-blue-100 text-blue-600 hover:bg-blue-200{% else %}bg-gray-100 text-gray-400 hover:bg-gray-200{% endif %}">
+                                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                                </svg>
+                                            </button>
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end gap-2">
+                                                <a href="{{ url_for('admin.admin_edit_pharmacy', id=pharmacy.id) }}" 
+                                                   class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Modifier">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </a>
+                                                <form action="{{ url_for('admin.admin_delete_pharmacy', id=pharmacy.id) }}" method="POST" 
+                                                      onsubmit="return confirm('Etes-vous sur de vouloir supprimer cette pharmacie ?')">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Supprimer">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-garde" class="tab-content">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800">Pharmacies de garde</h2>
+                            <p class="text-gray-500 mt-1">{{ pharmacies|selectattr('is_garde')|list|length }} pharmacies actuellement de garde</p>
+                        </div>
+                    </div>
+                    
+                    {% set garde_pharmacies = pharmacies|selectattr('is_garde')|list %}
+                    {% if garde_pharmacies %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-red-50">
+                                    <tr>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Pharmacie</th>
+                                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ville</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Debut garde</th>
+                                        <th class="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Fin garde</th>
+                                        <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for pharmacy in garde_pharmacies %}
+                                    <tr class="hover:bg-red-50/50 transition">
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                </div>
+                                                <div>
+                                                    <div class="font-semibold text-gray-800">{{ pharmacy.nom }}</div>
+                                                    <div class="text-xs text-gray-400">{{ pharmacy.telephone }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-lg">{{ pharmacy.ville }}</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            {% if pharmacy.garde_start_date %}
+                                            <span class="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-lg">{{ pharmacy.garde_start_date.strftime('%d/%m/%Y') }}</span>
+                                            {% else %}
+                                            <span class="text-xs text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            {% if pharmacy.garde_end_date %}
+                                            <span class="text-xs text-red-600 font-semibold bg-red-50 px-2 py-1 rounded-lg">{{ pharmacy.garde_end_date.strftime('%d/%m/%Y') }}</span>
+                                            {% else %}
+                                            <span class="text-xs text-gray-400">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="px-6 py-4 text-right">
+                                            <div class="flex items-center justify-end gap-2">
+                                                <button onclick="openGardeModal({{ pharmacy.id }}, '{{ pharmacy.nom|replace("'", "\\'") }}', true, 'garde')" 
+                                                        class="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg text-sm font-medium hover:bg-red-200 transition">
+                                                    Modifier
+                                                </button>
+                                                <a href="{{ url_for('admin.admin_edit_pharmacy', id=pharmacy.id) }}" 
+                                                   class="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="Modifier">
+                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <div class="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">Aucune pharmacie de garde actuellement</p>
+                        <p class="text-sm text-gray-400 mt-2">Cliquez sur l'icone de garde dans la liste des pharmacies pour en ajouter</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="tab-locations" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Localisations en attente</h2>
+                    {% if pending_locations %}
+                    <div class="space-y-4">
+                        {% for loc in pending_locations %}
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">{{ loc.pharmacy.nom }}</h3>
+                                    <p class="text-sm text-gray-500">{{ loc.pharmacy.ville }}</p>
+                                    <p class="text-sm text-blue-600 mt-2">Lat: {{ loc.latitude }}, Lng: {{ loc.longitude }}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <form action="{{ url_for('admin.approve_location', id=loc.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700">Approuver</button>
+                                    </form>
+                                    <form action="{{ url_for('admin.reject_location', id=loc.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="px-4 py-2 bg-red-100 text-red-600 rounded-xl text-sm font-medium hover:bg-red-200">Rejeter</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">Aucune localisation en attente</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="tab-infos" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Corrections d'informations</h2>
+                    {% if pending_infos %}
+                    <div class="space-y-4">
+                        {% for info in pending_infos %}
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <h3 class="font-semibold text-gray-800">{{ info.pharmacy.nom }}</h3>
+                                    <p class="text-sm text-gray-500">Champ: {{ info.field_name }}</p>
+                                    <p class="text-sm text-amber-600 mt-2">Nouvelle valeur: {{ info.new_value }}</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <form action="{{ url_for('admin.approve_info', id=info.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700">Approuver</button>
+                                    </form>
+                                    <form action="{{ url_for('admin.reject_info', id=info.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="px-4 py-2 bg-red-100 text-red-600 rounded-xl text-sm font-medium hover:bg-red-200">Rejeter</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">Aucune correction en attente</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="tab-stats" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Statistiques detaillees</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                        <div class="stat-card bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-2xl p-5 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-cyan-100 text-sm font-medium">Aujourd'hui</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ views_today }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl p-5 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-red-100 text-sm font-medium">Cette semaine</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ views_this_week }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-5 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-purple-100 text-sm font-medium">Ce mois</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ views_this_month }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card bg-gradient-to-br from-amber-500 to-amber-600 rounded-2xl p-5 shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-amber-100 text-sm font-medium">Total</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ total_views }}</p>
+                                </div>
+                                <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                                </svg>
+                                Consultations - 7 derniers jours
+                            </h3>
+                            <div style="position: relative; height: 200px;">
+                                <canvas id="viewsChart7Days"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                </svg>
+                                Consultations - 30 derniers jours
+                            </h3>
+                            <div style="position: relative; height: 200px;">
+                                <canvas id="viewsChart30Days"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                </svg>
+                                Pharmacies par ville
+                            </h3>
+                            <div style="position: relative; height: 250px;">
+                                <canvas id="pharmaciesByCityChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                                Consultations par ville
+                            </h3>
+                            <div style="position: relative; height: 250px;">
+                                <canvas id="viewsByCityChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/>
+                                </svg>
+                                Types d'etablissements
+                            </h3>
+                            <div style="position: relative; height: 250px;">
+                                <canvas id="pharmaciesByTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Contributions communautaires
+                            </h3>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Localisations</p>
+                                            <p class="text-sm text-gray-500">Propositions GPS</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-blue-600">{{ total_locations }}</p>
+                                        <p class="text-sm text-gray-500">{{ approved_locations }} approuvees</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-amber-50 rounded-xl">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Corrections</p>
+                                            <p class="text-sm text-gray-500">Modifications d'infos</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-amber-600">{{ total_infos }}</p>
+                                        <p class="text-sm text-gray-500">{{ approved_infos }} approuvees</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-green-50 rounded-xl">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Nouvelles pharmacies</p>
+                                            <p class="text-sm text-gray-500">Propositions</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-green-600">{{ total_proposals }}</p>
+                                        <p class="text-sm text-gray-500">{{ approved_proposals }} approuvees</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center justify-between p-4 bg-purple-50 rounded-xl">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <p class="font-medium text-gray-800">Suggestions</p>
+                                            <p class="text-sm text-gray-500">Messages recus</p>
+                                        </div>
+                                    </div>
+                                    <div class="text-right">
+                                        <p class="text-2xl font-bold text-purple-600">{{ total_suggestions }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                                </svg>
+                                Etat des donnees
+                            </h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Pharmacies avec GPS</span>
+                                        <span class="font-medium text-gray-800">{{ pharmacies|selectattr('latitude')|list|length }} / {{ pharmacies|length }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-red-500 h-3 rounded-full" style="width: {{ (pharmacies|selectattr('latitude')|list|length / pharmacies|length * 100) if pharmacies|length > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">GPS valides</span>
+                                        <span class="font-medium text-gray-800">{{ pharmacies|selectattr('location_validated')|list|length }} / {{ pharmacies|length }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-purple-500 h-3 rounded-full" style="width: {{ (pharmacies|selectattr('location_validated')|list|length / pharmacies|length * 100) if pharmacies|length > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Pharmacies verifiees</span>
+                                        <span class="font-medium text-gray-800">{{ pharmacies|selectattr('is_verified')|list|length }} / {{ pharmacies|length }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-indigo-500 h-3 rounded-full" style="width: {{ (pharmacies|selectattr('is_verified')|list|length / pharmacies|length * 100) if pharmacies|length > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span class="text-gray-600">Pharmacies de garde</span>
+                                        <span class="font-medium text-gray-800">{{ pharmacies|selectattr('is_garde')|list|length }} / {{ pharmacies|length }}</span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-3">
+                                        <div class="bg-red-500 h-3 rounded-full" style="width: {{ (pharmacies|selectattr('is_garde')|list|length / pharmacies|length * 100) if pharmacies|length > 0 else 0 }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 pt-6 border-t border-gray-100">
+                                <h4 class="font-medium text-gray-800 mb-3">Resume</h4>
+                                <div class="grid grid-cols-2 gap-4 text-center">
+                                    <div class="bg-gray-50 rounded-xl p-4">
+                                        <p class="text-3xl font-bold text-red-600">{{ pharmacies|length }}</p>
+                                        <p class="text-sm text-gray-500">Pharmacies</p>
+                                    </div>
+                                    <div class="bg-gray-50 rounded-xl p-4">
+                                        <p class="text-3xl font-bold text-blue-600">{{ pharmacies_by_city|length }}</p>
+                                        <p class="text-sm text-gray-500">Villes</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                            </svg>
+                            Top 10 pharmacies les plus consultees
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-sm text-gray-500 border-b border-gray-100">
+                                        <th class="pb-3 font-medium">Rang</th>
+                                        <th class="pb-3 font-medium">Pharmacie</th>
+                                        <th class="pb-3 font-medium">Ville</th>
+                                        <th class="pb-3 font-medium text-right">Consultations</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    {% for pharmacy in top_pharmacies %}
+                                    <tr class="hover:bg-gray-50 transition">
+                                        <td class="py-3">
+                                            {% if loop.index <= 3 %}
+                                            <span class="w-8 h-8 bg-gradient-to-br {% if loop.index == 1 %}from-amber-400 to-amber-500{% elif loop.index == 2 %}from-gray-300 to-gray-400{% else %}from-amber-600 to-amber-700{% endif %} rounded-full flex items-center justify-center text-white font-bold text-sm">{{ loop.index }}</span>
+                                            {% else %}
+                                            <span class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 font-medium text-sm">{{ loop.index }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 font-medium text-gray-800">{{ pharmacy.nom }}</td>
+                                        <td class="py-3 text-gray-600">{{ pharmacy.ville }}</td>
+                                        <td class="py-3 text-right">
+                                            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full font-semibold text-sm">{{ pharmacy.view_count }}</span>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="4" class="py-8 text-center text-gray-500">Aucune consultation enregistree</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="tab-proposals" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Propositions de nouvelles pharmacies</h2>
+                    {% if pending_proposals %}
+                    <div class="space-y-4">
+                        {% for prop in pending_proposals %}
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6" id="proposal-{{ prop.id }}">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-3">
+                                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-lg">Nouvelle pharmacie</span>
+                                        {% if prop.is_garde %}
+                                        <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-medium rounded-lg">Garde 24h/24</span>
+                                        {% endif %}
+                                    </div>
+                                    <h3 class="font-bold text-gray-800 text-lg">{{ prop.nom }}</h3>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-sm">
+                                        <div>
+                                            <span class="text-gray-500">Ville:</span>
+                                            <span class="text-gray-800 font-medium ml-1">{{ prop.ville }}</span>
+                                        </div>
+                                        {% if prop.quartier %}
+                                        <div>
+                                            <span class="text-gray-500">Quartier:</span>
+                                            <span class="text-gray-800 ml-1">{{ prop.quartier }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if prop.telephone %}
+                                        <div>
+                                            <span class="text-gray-500">Tel:</span>
+                                            <span class="text-gray-800 ml-1">{{ prop.telephone }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if prop.horaires %}
+                                        <div>
+                                            <span class="text-gray-500">Horaires:</span>
+                                            <span class="text-gray-800 ml-1">{{ prop.horaires }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if prop.services %}
+                                        <div class="sm:col-span-2">
+                                            <span class="text-gray-500">Services:</span>
+                                            <span class="text-gray-800 ml-1">{{ prop.services }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if prop.proprietaire %}
+                                        <div>
+                                            <span class="text-gray-500">Proprietaire:</span>
+                                            <span class="text-gray-800 ml-1">{{ prop.proprietaire }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if prop.type_etablissement %}
+                                        <div>
+                                            <span class="text-gray-500">Type:</span>
+                                            <span class="text-gray-800 ml-1">{{ prop.type_etablissement }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% if prop.comment %}
+                                    <div class="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+                                        {{ prop.comment }}
+                                    </div>
+                                    {% endif %}
+                                    <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                                        Propose par: {{ prop.submitted_by_name or 'Anonyme' }}
+                                        {% if prop.submitted_by_phone %} - {{ prop.submitted_by_phone }}{% endif %}
+                                        {% if prop.submitted_by_email %} - {{ prop.submitted_by_email }}{% endif %}
+                                        <span class="ml-2">{{ prop.created_at.strftime('%d/%m/%Y %H:%M') if prop.created_at else '' }}</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2">
+                                    <button onclick="approveProposal({{ prop.id }})" class="px-4 py-2 bg-green-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 transition">Valider</button>
+                                    <button onclick="rejectProposal({{ prop.id }})" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition">Rejeter</button>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">Aucune proposition de pharmacie en attente</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div id="tab-suggestions" class="tab-content">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Suggestions des utilisateurs</h2>
+                    {% if pending_suggestions %}
+                    <div class="space-y-4">
+                        {% for sug in pending_suggestions %}
+                        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-lg">{{ sug.category }}</span>
+                                    </div>
+                                    <h3 class="font-semibold text-gray-800">{{ sug.subject }}</h3>
+                                    <p class="text-sm text-gray-600 mt-2">{{ sug.message }}</p>
+                                    {% if sug.name or sug.email or sug.phone %}
+                                    <div class="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                                        {% if sug.name %}{{ sug.name }}{% endif %}
+                                        {% if sug.email %} - {{ sug.email }}{% endif %}
+                                        {% if sug.phone %} - {{ sug.phone }}{% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <form action="{{ url_for('admin.mark_suggestion_read', id=sug.id) }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200">Marquer lu</button>
+                                </form>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">Aucune suggestion en attente</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <div id="gardeModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div class="p-6 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-800">Gestion de garde</h3>
+                <p id="gardePharmacyName" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <form id="gardeForm" method="POST" class="p-6">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" id="gardePharmacyId" name="pharmacy_id">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date de debut de garde</label>
+                        <input type="date" id="gardeStartDate" name="start_date" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                        <p class="mt-2 text-xs text-gray-500">La garde durera 7 jours. Laissez vide pour retirer le statut de garde.</p>
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button type="button" onclick="closeGardeModal()" class="flex-1 px-4 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition">Annuler</button>
+                    <button type="submit" class="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 font-medium transition">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-btn').forEach(b => {
+                b.classList.remove('bg-white/20', 'text-white');
+                b.classList.add('text-white/80', 'hover:bg-white/10');
+            });
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            const activeBtn = document.querySelector(`.admin-tab-btn[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white/20', 'text-white');
+                activeBtn.classList.remove('text-white/80', 'hover:bg-white/10');
+            }
+        }
+        
+        function filterTable() {
+            const input = document.getElementById('searchAdmin');
+            const filter = input.value.toLowerCase();
+            const rows = document.querySelectorAll('.pharmacy-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? '' : 'none';
+            });
+        }
+        
+        function openGardeModal(id, name, isGarde, tab) {
+            document.getElementById('gardePharmacyId').value = id;
+            document.getElementById('gardePharmacyName').textContent = name;
+            document.getElementById('gardeModal').classList.remove('hidden');
+            document.getElementById('gardeModal').classList.add('flex');
+            const currentTab = tab || window.location.hash.replace('#', '') || 'pharmacies';
+            document.getElementById('gardeForm').action = '/admin/pharmacy/' + id + '/garde?tab=' + currentTab;
+        }
+        
+        function closeGardeModal() {
+            document.getElementById('gardeModal').classList.add('hidden');
+            document.getElementById('gardeModal').classList.remove('flex');
+        }
+        
+        function toggleValidation(id, btn, current) {
+            const endpoint = current ? '/admin/pharmacy/' + id + '/invalidate-location' : '/admin/pharmacy/' + id + '/validate-location';
+            fetch(endpoint, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        btn.classList.toggle('bg-purple-100');
+                        btn.classList.toggle('text-purple-600');
+                        btn.classList.toggle('bg-gray-100');
+                        btn.classList.toggle('text-gray-400');
+                    }
+                });
+        }
+        
+        function toggleVerified(id, btn, current) {
+            const action = current ? 'retirer la verification de' : 'marquer comme verifiee';
+            if (!confirm('Voulez-vous vraiment ' + action + ' cette pharmacie ?')) return;
+            
+            fetch('/admin/pharmacy/' + id + '/toggle-verified', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = window.location.pathname + '#pharmacies';
+                        location.reload();
+                    }
+                });
+        }
+        
+        function approveProposal(id) {
+            if (!confirm('Valider cette pharmacie et l\'ajouter a la liste ?')) return;
+            
+            fetch('/admin/pharmacy-proposal/' + id + '/approve', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('proposal-' + id).remove();
+                        alert('Pharmacie ajoutee avec succes !');
+                    }
+                })
+                .catch(err => alert('Erreur lors de la validation'));
+        }
+        
+        function rejectProposal(id) {
+            if (!confirm('Rejeter cette proposition de pharmacie ?')) return;
+            
+            fetch('/admin/pharmacy-proposal/' + id + '/reject', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('proposal-' + id).remove();
+                    }
+                })
+                .catch(err => alert('Erreur lors du rejet'));
+        }
+        
+        function archiveSuggestion(id) {
+            fetch('/admin/suggestion/' + id + '/archive', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+        }
+        
+        function initCharts() {
+            const views7DaysData = {{ views_last_7_days | tojson | safe }};
+            const views30DaysData = {{ views_last_30_days | tojson | safe }};
+            const pharmaciesByCityData = {{ pharmacies_by_city | tojson | safe }};
+            const viewsByCityData = {{ views_by_city | tojson | safe }};
+            const pharmaciesByTypeData = {{ pharmacies_by_type | tojson | safe }};
+            
+            const chartColors = [
+                'rgba(16, 185, 129, 0.8)',
+                'rgba(59, 130, 246, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(245, 158, 11, 0.8)',
+                'rgba(239, 68, 68, 0.8)',
+                'rgba(236, 72, 153, 0.8)',
+                'rgba(6, 182, 212, 0.8)',
+                'rgba(132, 204, 22, 0.8)',
+                'rgba(251, 146, 60, 0.8)',
+                'rgba(99, 102, 241, 0.8)'
+            ];
+            
+            const ctx7Days = document.getElementById('viewsChart7Days');
+            if (ctx7Days) {
+                new Chart(ctx7Days, {
+                    type: 'bar',
+                    data: {
+                        labels: views7DaysData.map(d => d.day_name + ' ' + d.date),
+                        datasets: [{
+                            label: 'Consultations',
+                            data: views7DaysData.map(d => d.count),
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+            
+            const ctx30Days = document.getElementById('viewsChart30Days');
+            if (ctx30Days) {
+                new Chart(ctx30Days, {
+                    type: 'line',
+                    data: {
+                        labels: views30DaysData.map(d => d.date),
+                        datasets: [{
+                            label: 'Consultations',
+                            data: views30DaysData.map(d => d.count),
+                            borderColor: 'rgba(139, 92, 246, 1)',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }
+                        }
+                    }
+                });
+            }
+            
+            const ctxCity = document.getElementById('pharmaciesByCityChart');
+            if (ctxCity && pharmaciesByCityData.length > 0) {
+                new Chart(ctxCity, {
+                    type: 'doughnut',
+                    data: {
+                        labels: pharmaciesByCityData.map(d => d.ville),
+                        datasets: [{
+                            data: pharmaciesByCityData.map(d => d.count),
+                            backgroundColor: chartColors,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+            
+            const ctxViewsCity = document.getElementById('viewsByCityChart');
+            if (ctxViewsCity && viewsByCityData.length > 0) {
+                new Chart(ctxViewsCity, {
+                    type: 'pie',
+                    data: {
+                        labels: viewsByCityData.map(d => d.ville),
+                        datasets: [{
+                            data: viewsByCityData.map(d => d.view_count),
+                            backgroundColor: chartColors,
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, padding: 8, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+            
+            const ctxType = document.getElementById('pharmaciesByTypeChart');
+            if (ctxType && pharmaciesByTypeData.length > 0) {
+                const typeLabels = {
+                    'pharmacie_generale': 'Pharmacie generale',
+                    'depot_pharmaceutique': 'Depot pharmaceutique',
+                    'pharmacie_specialisee': 'Pharmacie specialisee',
+                    'pharmacie_hospitaliere': 'Pharmacie hospitaliere'
+                };
+                new Chart(ctxType, {
+                    type: 'bar',
+                    data: {
+                        labels: pharmaciesByTypeData.map(d => typeLabels[d.type] || d.type),
+                        datasets: [{
+                            label: 'Nombre',
+                            data: pharmaciesByTypeData.map(d => d.count),
+                            backgroundColor: chartColors,
+                            borderWidth: 0,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                            y: { grid: { display: false } }
+                        }
+                    }
+                });
+            }
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+        
+        // Close sidebar when clicking on a menu item
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuItems = document.querySelectorAll('aside a, .admin-tab-btn');
+            menuItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const sidebar = document.getElementById('sidebar');
+                    const overlay = document.getElementById('sidebarOverlay');
+                    if (window.innerWidth < 1024) {
+                        sidebar.classList.add('-translate-x-full');
+                        overlay.classList.add('hidden');
+                    }
+                });
+            });
+            
+            // Check for hash in URL to switch to correct tab
+            const hash = window.location.hash.replace('#', '');
+            if (hash && document.getElementById('tab-' + hash)) {
+                switchAdminTab(hash);
+            }
+            
+            const statsObserver = new MutationObserver(function(mutations) {
+                const statsTab = document.getElementById('tab-stats');
+                if (statsTab && statsTab.classList.contains('active')) {
+                    initCharts();
+                    statsObserver.disconnect();
+                }
+            });
+            
+            statsObserver.observe(document.getElementById('tab-stats'), { attributes: true, attributeFilter: ['class'] });
+            
+            const statsBtn = document.querySelector('.admin-tab-btn[data-tab="stats"]');
+            if (statsBtn) {
+                statsBtn.addEventListener('click', function() {
+                    setTimeout(initCharts, 100);
+                }, { once: true });
+            }
+        });
+    </script>
+</body>
+</html>

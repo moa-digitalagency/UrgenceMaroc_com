@@ -1,0 +1,117 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/admin/pharmacy_garde.html - Gestion du statut de garde
+  Ce fichier permet de configurer les dates de garde d'une pharmacie.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion de garde - {{ pharmacy.nom }} - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .form-input {
+            transition: all 0.2s ease;
+        }
+        .form-input:focus {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-white border-b shadow-sm sticky top-0 z-50">
+        <div class="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="p-2.5 hover:bg-gray-100 rounded-xl transition flex items-center gap-2 text-gray-600 hover:text-gray-800">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                <span class="text-sm font-medium hidden sm:inline">Retour</span>
+            </a>
+            <div class="flex-1">
+                <h1 class="text-xl font-bold text-gray-800">Gestion de garde</h1>
+                <p class="text-sm text-gray-500">{{ pharmacy.nom }}</p>
+            </div>
+            <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+    </header>
+    
+    <main class="max-w-2xl mx-auto px-4 py-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="mb-6 p-4 rounded-xl {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="px-6 py-4 bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-100">
+                    <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Statut de garde
+                    </h2>
+                </div>
+                <div class="p-6 space-y-5">
+                    <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-sm font-medium text-gray-700">Statut actuel:</span>
+                            {% if pharmacy.is_garde %}
+                                <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm font-medium">
+                                    En garde
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-sm font-medium">
+                                    Pas en garde
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% if pharmacy.is_garde and pharmacy.garde_end_date %}
+                            <p class="text-sm text-gray-600">
+                                Fin de garde: <strong>{{ pharmacy.garde_end_date.strftime('%d/%m/%Y') }}</strong>
+                            </p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Date de debut de garde</label>
+                        <input type="date" name="start_date" 
+                               value="{{ pharmacy.garde_start_date.strftime('%Y-%m-%d') if pharmacy.garde_start_date else '' }}"
+                               class="form-input w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:bg-white">
+                        <p class="mt-2 text-sm text-gray-500">
+                            La garde durera automatiquement 7 jours a partir de cette date. Laissez vide pour retirer le statut de garde.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button type="submit" class="flex-1 bg-gradient-to-r from-orange-500 to-red-600 text-white py-3.5 px-6 rounded-xl font-semibold hover:from-orange-600 hover:to-red-700 transition shadow-lg shadow-orange-500/25">
+                    Mettre a jour le statut de garde
+                </button>
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="px-6 py-3.5 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition">
+                    Annuler
+                </a>
+            </div>
+        </form>
+    </main>
+</body>
+</html>

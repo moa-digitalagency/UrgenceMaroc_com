@@ -1,0 +1,246 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/admin/logs.html - Page des logs d'activité
+  Ce fichier affiche tous les logs avec filtres et recherche.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs d'activité - UrgenceMaroc.com</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .log-row:hover { background-color: #f9fafb; }
+    </style>
+    <script>
+        function toggleDetails(id) {
+            const row = document.getElementById('details-' + id);
+            if (row) {
+                row.classList.toggle('hidden');
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Logs d'activité</h1>
+                <p class="text-gray-500">Suivi des requêtes, erreurs et actions</p>
+            </div>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                Retour
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-2xl font-bold text-gray-800">{{ stats.total }}</p>
+                <p class="text-sm text-gray-500">Total logs</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-2xl font-bold text-green-600">{{ stats.success }}</p>
+                <p class="text-sm text-gray-500">Succès</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-2xl font-bold text-blue-600">{{ stats.requests }}</p>
+                <p class="text-sm text-gray-500">Requêtes</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-2xl font-bold text-purple-600">{{ stats.auth }}</p>
+                <p class="text-sm text-gray-500">Auth</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-2xl font-bold text-amber-600">{{ stats.warnings }}</p>
+                <p class="text-sm text-gray-500">Avertissements</p>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border">
+                <p class="text-2xl font-bold text-red-600">{{ stats.errors }}</p>
+                <p class="text-sm text-gray-500">Erreurs</p>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border mb-6">
+            <form method="GET" class="p-4 flex flex-wrap gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Type</label>
+                    <select name="type" class="px-3 py-2 border rounded-lg text-sm">
+                        <option value="">Tous</option>
+                        <option value="request" {% if current_type == 'request' %}selected{% endif %}>Requêtes</option>
+                        <option value="auth" {% if current_type == 'auth' %}selected{% endif %}>Authentification</option>
+                        <option value="error" {% if current_type == 'error' %}selected{% endif %}>Erreurs</option>
+                        <option value="admin_action" {% if current_type == 'admin_action' %}selected{% endif %}>Actions admin</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Niveau</label>
+                    <select name="level" class="px-3 py-2 border rounded-lg text-sm">
+                        <option value="">Tous</option>
+                        <option value="info" {% if current_level == 'info' %}selected{% endif %}>Info</option>
+                        <option value="warning" {% if current_level == 'warning' %}selected{% endif %}>Warning</option>
+                        <option value="error" {% if current_level == 'error' %}selected{% endif %}>Error</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Adresse IP</label>
+                    <input type="text" name="ip" value="{{ current_ip }}" placeholder="Rechercher IP..." class="px-3 py-2 border rounded-lg text-sm w-40">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Chemin</label>
+                    <input type="text" name="path" value="{{ current_path }}" placeholder="Rechercher path..." class="px-3 py-2 border rounded-lg text-sm w-40">
+                </div>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
+                    Filtrer
+                </button>
+                <a href="{{ url_for('admin.view_logs') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm">
+                    Reset
+                </a>
+            </form>
+        </div>
+        
+        <div class="bg-white rounded-xl shadow-sm border overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Date/Heure</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Niveau</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Type</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">IP</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Méthode</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Chemin</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Temps (ms)</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Message</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-600">Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for log in logs.items %}
+                        <tr class="log-row cursor-pointer" onclick="toggleDetails({{ log.id }})">
+                            <td class="px-4 py-3 text-gray-600 whitespace-nowrap">
+                                {{ log.timestamp.strftime('%d/%m %H:%M:%S') if log.timestamp else '-' }}
+                            </td>
+                            <td class="px-4 py-3">
+                                {% if log.log_level == 'error' %}
+                                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">ERROR</span>
+                                {% elif log.log_level == 'warning' %}
+                                <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">WARN</span>
+                                {% elif log.log_level == 'success' %}
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">SUCCESS</span>
+                                {% else %}
+                                <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">INFO</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">{{ log.log_type or '-' }}</td>
+                            <td class="px-4 py-3 text-gray-600 font-mono text-xs">{{ log.ip_address or '-' }}</td>
+                            <td class="px-4 py-3">
+                                {% if log.method %}
+                                <span class="px-2 py-1 {% if log.method == 'POST' %}bg-green-100 text-green-700{% elif log.method == 'DELETE' %}bg-red-100 text-red-700{% else %}bg-gray-100 text-gray-700{% endif %} rounded text-xs font-medium">{{ log.method }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-gray-600 max-w-xs truncate" title="{{ log.path }}">{{ log.path or '-' }}</td>
+                            <td class="px-4 py-3">
+                                {% if log.status_code %}
+                                <span class="{% if log.status_code >= 500 %}text-red-600{% elif log.status_code >= 400 %}text-amber-600{% elif log.status_code >= 200 and log.status_code < 300 %}text-green-600{% else %}text-gray-600{% endif %} font-medium">{{ log.status_code }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-gray-500 text-xs">
+                                {% if log.response_time_ms %}
+                                <span class="{% if log.response_time_ms > 1000 %}text-red-600{% elif log.response_time_ms > 500 %}text-amber-600{% else %}text-gray-600{% endif %}">{{ '%.0f' % log.response_time_ms }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-gray-600 max-w-xs truncate" title="{{ log.message }}">{{ log.message or '-' }}</td>
+                            <td class="px-4 py-3">
+                                {% if log.user_agent or log.details %}
+                                <button class="text-blue-600 hover:text-blue-800 text-xs">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </button>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr id="details-{{ log.id }}" class="hidden bg-gray-50">
+                            <td colspan="10" class="px-4 py-3">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                                    <div>
+                                        <p class="font-medium text-gray-700 mb-1">User Agent:</p>
+                                        <p class="text-gray-600 break-all">{{ log.user_agent or 'Non disponible' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="font-medium text-gray-700 mb-1">Détails:</p>
+                                        <p class="text-gray-600 break-all">{{ log.details or 'Aucun détail' }}</p>
+                                    </div>
+                                    {% if log.admin %}
+                                    <div>
+                                        <p class="font-medium text-gray-700 mb-1">Admin:</p>
+                                        <p class="text-gray-600">{{ log.admin.username }}</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" class="px-4 py-8 text-center text-gray-500">Aucun log trouvé</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if logs.pages > 1 %}
+            <div class="px-4 py-3 border-t bg-gray-50 flex items-center justify-between">
+                <p class="text-sm text-gray-600">
+                    Page {{ logs.page }} sur {{ logs.pages }} ({{ logs.total }} entrées)
+                </p>
+                <div class="flex gap-2">
+                    {% if logs.has_prev %}
+                    <a href="{{ url_for('admin.view_logs', page=logs.prev_num, type=current_type, level=current_level, ip=current_ip, path=current_path) }}" class="px-3 py-1 bg-white border rounded hover:bg-gray-50 text-sm">Précédent</a>
+                    {% endif %}
+                    {% if logs.has_next %}
+                    <a href="{{ url_for('admin.view_logs', page=logs.next_num, type=current_type, level=current_level, ip=current_ip, path=current_path) }}" class="px-3 py-1 bg-white border rounded hover:bg-gray-50 text-sm">Suivant</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="mt-6 bg-white rounded-xl shadow-sm border p-4">
+            <h3 class="font-medium text-gray-700 mb-3">Nettoyer les anciens logs</h3>
+            <form method="POST" action="{{ url_for('admin.clear_logs') }}" class="flex items-center gap-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="days" class="px-3 py-2 border rounded-lg text-sm">
+                    <option value="7">Plus de 7 jours</option>
+                    <option value="30" selected>Plus de 30 jours</option>
+                    <option value="90">Plus de 90 jours</option>
+                </select>
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ces logs ?')">
+                    Nettoyer
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

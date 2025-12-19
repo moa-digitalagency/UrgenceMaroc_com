@@ -1,0 +1,214 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/admin/settings.html - Paramètres du site
+  Ce fichier permet de configurer le nom, logo, favicon, SEO et code personnalisé.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paramètres du site - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Paramètres du site</h1>
+                <p class="text-gray-600">Configurez les paramètres généraux de UrgenceMaroc.com</p>
+            </div>
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                Retour au tableau de bord
+            </a>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="mb-6 p-4 rounded-xl {% if category == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Informations générales
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom du site</label>
+                        <input type="text" name="site_name" value="{{ settings.get('site_name', 'UrgenceMaroc.com') }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email de contact</label>
+                        <input type="email" name="contact_email" value="{{ settings.get('contact_email', '') }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description du site</label>
+                        <textarea name="site_description" rows="2" 
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">{{ settings.get('site_description', '') }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone de contact</label>
+                        <input type="text" name="contact_phone" value="{{ settings.get('contact_phone', '') }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fuseau horaire</label>
+                        <select name="site_timezone" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                            <option value="Africa/Libreville" {% if settings.get('site_timezone', 'Africa/Libreville') == 'Africa/Libreville' %}selected{% endif %}>Africa/Libreville (WAT, UTC+1)</option>
+                            <option value="UTC" {% if settings.get('site_timezone') == 'UTC' %}selected{% endif %}>UTC</option>
+                            <option value="Europe/Paris" {% if settings.get('site_timezone') == 'Europe/Paris' %}selected{% endif %}>Europe/Paris (CET/CEST)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    Images et apparence
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Logo du site</label>
+                        {% if settings.get('site_logo_filename') %}
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
+                            <img src="/static/uploads/settings/{{ settings.get('site_logo_filename') }}" alt="Logo actuel" class="w-16 h-16 object-contain rounded">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600">Logo actuel</p>
+                                <label class="flex items-center gap-2 mt-1 cursor-pointer">
+                                    <input type="checkbox" name="remove_logo" class="w-4 h-4 text-red-600 rounded">
+                                    <span class="text-sm text-red-600">Supprimer</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="site_logo_file" accept="image/*"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">PNG, JPG, JPEG, GIF, WebP, SVG</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Favicon</label>
+                        {% if settings.get('site_favicon_filename') %}
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
+                            <img src="/static/uploads/settings/{{ settings.get('site_favicon_filename') }}" alt="Favicon actuel" class="w-12 h-12 object-contain rounded">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600">Favicon actuel</p>
+                                <label class="flex items-center gap-2 mt-1 cursor-pointer">
+                                    <input type="checkbox" name="remove_favicon" class="w-4 h-4 text-red-600 rounded">
+                                    <span class="text-sm text-red-600">Supprimer</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="site_favicon_file" accept="image/*,.ico"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">ICO, PNG, SVG recommandé</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                    SEO & OpenGraph
+                </h2>
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Titre OpenGraph (og:title)</label>
+                        <input type="text" name="og_title" value="{{ settings.get('og_title', 'UrgenceMaroc.com - Trouvez votre pharmacie') }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description OpenGraph (og:description)</label>
+                        <textarea name="og_description" rows="2" 
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">{{ settings.get('og_description', '') }}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Image OpenGraph (og:image)</label>
+                        {% if settings.get('og_image_filename') %}
+                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-2">
+                            <img src="/static/uploads/settings/{{ settings.get('og_image_filename') }}" alt="Image OG actuelle" class="w-24 h-16 object-cover rounded">
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-600">Image actuelle</p>
+                                <label class="flex items-center gap-2 mt-1 cursor-pointer">
+                                    <input type="checkbox" name="remove_og_image" class="w-4 h-4 text-red-600 rounded">
+                                    <span class="text-sm text-red-600">Supprimer</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <input type="file" name="og_image_file" accept="image/*"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                        <p class="text-xs text-gray-500 mt-1">Recommandé: 1200x630 pixels (PNG, JPG)</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mots-clés (meta keywords)</label>
+                        <input type="text" name="meta_keywords" value="{{ settings.get('meta_keywords', 'pharmacie, maroc, garde, urgence, libreville') }}" 
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Google Analytics ID</label>
+                        <input type="text" name="google_analytics_id" value="{{ settings.get('google_analytics_id', '') }}" 
+                               placeholder="G-XXXXXXXXXX"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/>
+                    </svg>
+                    Code personnalisé (Header)
+                </h2>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Code à ajouter dans le &lt;head&gt; de toutes les pages</label>
+                    <textarea name="header_code" rows="6" 
+                              placeholder="<!-- Scripts, styles ou meta tags personnalisés -->"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm">{{ settings.get('header_code', '') }}</textarea>
+                    <p class="text-xs text-gray-500 mt-1">Ce code sera injecté dans la section &lt;head&gt; de toutes les pages publiques (analytics, pixels, etc.)</p>
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button type="submit" class="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Enregistrer les paramètres
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,608 @@
+<!--
+  UrgenceMaroc.com
+  By MOA Digital Agency LLC
+  Developed by: Aisance KALONJI
+  Contact: moa@myoneart.com
+  Website: www.myoneart.com
+
+  templates/index.html - Page d'accueil principale
+  Ce fichier affiche la liste des pharmacies, la carte interactive,
+  les numéros d'urgence et la boîte à suggestions.
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ og_title or 'UrgenceMaroc.com' }}</title>
+    <link rel="icon" href="{{ favicon_url }}">
+    
+    <meta name="description" content="{{ meta_description or og_description or 'Annuaire des pharmacies au Maroc' }}">
+    <meta name="keywords" content="{{ meta_keywords or 'pharmacie maroc, pharmacie garde, urgence maroc' }}">
+    <meta name="author" content="{{ meta_author or 'MOA Digital Agency LLC' }}">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="French">
+    <meta name="revisit-after" content="1 days">
+    {% if google_site_verification %}<meta name="google-site-verification" content="{{ google_site_verification }}">{% endif %}
+    {% if canonical_url %}<link rel="canonical" href="{{ canonical_url }}">{% endif %}
+    
+    <meta property="og:type" content="{{ og_type or 'website' }}">
+    <meta property="og:locale" content="{{ og_locale or 'fr_FR' }}">
+    <meta property="og:site_name" content="{{ site_name or 'UrgenceMaroc.com' }}">
+    {% if og_title %}<meta property="og:title" content="{{ og_title }}">{% endif %}
+    {% if og_description %}<meta property="og:description" content="{{ og_description }}">{% endif %}
+    {% if og_image_url %}<meta property="og:image" content="{{ og_image_url }}">{% endif %}
+    {% if canonical_url %}<meta property="og:url" content="{{ canonical_url }}">{% endif %}
+    
+    <meta name="twitter:card" content="{{ twitter_card or 'summary_large_image' }}">
+    {% if twitter_handle %}<meta name="twitter:site" content="{{ twitter_handle }}">{% endif %}
+    {% if twitter_title %}<meta name="twitter:title" content="{{ twitter_title }}">{% endif %}
+    {% if twitter_description %}<meta name="twitter:description" content="{{ twitter_description }}">{% endif %}
+    {% if og_image_url %}<meta name="twitter:image" content="{{ og_image_url }}">{% endif %}
+    
+    {% if structured_data %}{{ structured_data }}{% endif %}
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#FEE8E8',
+                            100: '#FCCDD2',
+                            200: '#F9A5AA',
+                            300: '#F67D82',
+                            400: '#F35A67',
+                            500: '#E63A47',
+                            600: '#CE1126',
+                            700: '#B50D1F',
+                            800: '#8B0917',
+                            900: '#6B0510',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    {% if header_code %}{{ header_code }}{% endif %}
+</head>
+<body class="font-sans bg-gray-50 min-h-screen">
+    <div id="app" class="pb-20 lg:pb-0">
+        <div id="stickyHeader" class="sticky top-0 z-[600]">
+        <header class="bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg">
+            <div class="max-w-4xl mx-auto px-4 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
+                            <!-- Drapeau du Maroc -->
+                            <svg class="w-10 h-10" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Fond rouge -->
+                                <rect width="300" height="200" fill="#CE1126"/>
+                                <!-- Étoile verte à 5 branches au centre -->
+                                <g transform="translate(150, 100)">
+                                    <!-- Étoile verte -->
+                                    <polygon points="0,-45 14,-14 45,-14 22,11 36,45 0,22 -36,45 -22,11 -45,-14 -14,-14" fill="#006B3F" stroke="#006B3F" stroke-width="1"/>
+                                    <!-- Contour blanc subtil -->
+                                    <polygon points="0,-45 14,-14 45,-14 22,11 36,45 0,22 -36,45 -22,11 -45,-14 -14,-14" fill="none" stroke="white" stroke-width="0.5" opacity="0.3"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-lg font-bold">UrgenceMaroc.com</h1>
+                            <p class="text-xs text-primary-100">{{ total_pharmacies }} établissements</p>
+                        </div>
+                    </div>
+                    <a href="/admin/login" class="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </a>
+                </div>
+                
+                <div id="searchSection" class="search-section">
+                    <div class="mt-4 relative">
+                        <input type="text" id="searchInput" placeholder="Rechercher une pharmacie..." 
+                               class="w-full px-4 py-3 pl-11 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/30">
+                        <svg class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                        <button onclick="filterByCity('')" class="city-filter active px-4 py-2 bg-white text-primary-700 rounded-full text-sm font-medium whitespace-nowrap" data-city="">
+                            Toutes
+                        </button>
+                        {% for ville in villes %}
+                        <button onclick="filterByCity('{{ ville }}')" class="city-filter px-4 py-2 bg-white/10 text-white rounded-full text-sm font-medium whitespace-nowrap hover:bg-white/20" data-city="{{ ville }}">
+                            {{ ville }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="hidden lg:block bg-white border-b shadow-sm">
+            <div class="max-w-4xl mx-auto px-4">
+                <nav class="flex">
+                    <button onclick="switchTab('pharmacies')" class="tab-btn active px-6 py-4 text-sm font-medium border-b-2 border-primary-600 text-primary-600" data-tab="pharmacies">
+                        Toutes les pharmacies
+                    </button>
+                    <button onclick="switchTab('garde')" class="tab-btn px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="garde">
+                        Pharmacies de garde
+                    </button>
+                    <button onclick="switchTab('map')" class="tab-btn px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="map">
+                        Carte
+                    </button>
+                    <button onclick="switchTab('urgences')" class="tab-btn px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="urgences">
+                        Numéros d'urgence
+                    </button>
+                    <button onclick="switchTab('suggestions')" class="tab-btn px-6 py-4 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="suggestions">
+                        Boîte à suggestions
+                    </button>
+                </nav>
+            </div>
+        </div>
+        </div>
+        
+        <main class="max-w-4xl mx-auto px-4 py-6">
+            <div id="tab-pharmacies" class="tab-content">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Pharmacies <span id="countAll" class="text-primary-600">(0)</span>
+                        </h2>
+                    </div>
+                    <div id="pharmacyList" class="space-y-3">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tab-garde" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div class="mb-4">
+                        <label for="gardeVilleFilter" class="block text-sm font-medium text-gray-700 mb-2">Filtrer par ville</label>
+                        <select id="gardeVilleFilter" onchange="filterGardeByCity(this.value)" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white">
+                            <option value="">Toutes les villes</option>
+                            {% for ville in villes %}
+                            <option value="{{ ville }}">{{ ville }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Pharmacies de garde <span id="countGarde" class="text-red-600">(0)</span>
+                        </h2>
+                    </div>
+                    <div id="gardeList" class="space-y-3">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tab-map" class="tab-content hidden relative z-0">
+                <div id="map" class="h-[calc(100vh-120px)] lg:h-[calc(100vh-100px)] w-full"></div>
+            </div>
+            
+            <div id="tab-urgences" class="tab-content hidden">
+                <div class="space-y-6">
+                    <div class="bg-red-50 border border-red-200 rounded-2xl p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-red-800">Numéros d'Urgence Nationaux</h2>
+                                <p class="text-sm text-red-600">En cas d'urgence, appelez immédiatement</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {% for contact in national_contacts %}
+                            <a href="tel:{{ contact.phone_numbers.split('/')[0].strip().replace(' ', '') }}" class="flex items-center gap-3 p-4 bg-white rounded-xl border border-red-100 hover:bg-red-50 transition">
+                                <div class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-800">{{ contact.label }}</p>
+                                    <button onclick="handlePhoneClick('{{ contact.phone_numbers }}', event)" class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-100 text-red-700 text-sm font-bold rounded-full mt-1 hover:bg-red-200 transition cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                        {{ contact.phone_numbers }}
+                                    </button>
+                                    {% if contact.notes %}
+                                    <p class="text-xs text-gray-500">{{ contact.notes }}</p>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    {% for ville, contacts in contacts_by_city.items() %}
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                                <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-800">{{ ville }}</h3>
+                        </div>
+                        <div class="space-y-3">
+                            {% for contact in contacts %}
+                            <a href="tel:{{ contact.phone_numbers.split('/')[0].strip().replace(' ', '') }}" class="flex items-center gap-3 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
+                                    {% if contact.service_type == 'police' %}bg-blue-100{% elif contact.service_type == 'hopital' %}bg-green-100{% elif contact.service_type == 'ambulance' %}bg-red-100{% elif contact.service_type == 'clinique' %}bg-purple-100{% else %}bg-gray-100{% endif %}">
+                                    {% if contact.service_type == 'police' %}
+                                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                                    </svg>
+                                    {% elif contact.service_type == 'hopital' or contact.service_type == 'clinique' %}
+                                    <svg class="w-5 h-5 {% if contact.service_type == 'hopital' %}text-green-600{% else %}text-purple-600{% endif %}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                    </svg>
+                                    {% elif contact.service_type == 'ambulance' %}
+                                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                    {% else %}
+                                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                    </svg>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">{{ contact.label }}</p>
+                                    <button onclick="handlePhoneClick('{{ contact.phone_numbers }}', event)" class="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-red-700 text-sm font-medium rounded-full mt-1 hover:bg-red-100 transition cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                        </svg>
+                                        {{ contact.phone_numbers }}
+                                    </button>
+                                    {% if contact.address %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full mt-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        {{ contact.address }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-amber-800 mb-2">Conseils en cas d'urgence</h4>
+                                <ul class="text-sm text-amber-700 space-y-1">
+                                    <li>Restez calme et parlez clairement</li>
+                                    <li>Indiquez votre localisation précise</li>
+                                    <li>Décrivez la nature de l'urgence</li>
+                                    <li>Ne raccrochez pas avant qu'on vous le dise</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="tab-suggestions" class="tab-content hidden">
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <div class="max-w-lg mx-auto">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                                </svg>
+                            </div>
+                            <h2 class="text-xl font-bold text-gray-800 mb-1">Boîte à Suggestions</h2>
+                            <p class="text-gray-600 text-sm">Partagez vos idées pour améliorer notre service</p>
+                        </div>
+                        
+                        <form id="suggestionForm" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie *</label>
+                                <select id="suggestionCategory" onchange="updateSuggestionForm()" required class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                    <option value="">Sélectionnez une catégorie</option>
+                                    <option value="suggestion">Suggestion d'amélioration</option>
+                                    <option value="erreur">Signaler une erreur</option>
+                                    <option value="pharmacie">Proposer une nouvelle pharmacie</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                            </div>
+                            
+                            <div id="standardFields">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Sujet *</label>
+                                        <input type="text" id="suggestionSubject" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Résumez votre suggestion">
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Message *</label>
+                                        <textarea id="suggestionMessage" rows="4" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Décrivez votre suggestion en détail..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="pharmacyFields" class="hidden space-y-4">
+                                <div class="bg-primary-50 border border-primary-200 rounded-lg p-3 mb-4">
+                                    <p class="text-sm text-primary-800">Remplissez les informations de la pharmacie que vous souhaitez proposer</p>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Nom de la pharmacie *</label>
+                                        <input type="text" id="pharmacyNom" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Ex: Pharmacie du Centre">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Ville *</label>
+                                        <select id="pharmacyVille" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                            <option value="">Sélectionnez une ville</option>
+                                            {% for ville in villes %}
+                                            <option value="{{ ville }}">{{ ville }}</option>
+                                            {% endfor %}
+                                            <option value="autre">Autre ville...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Quartier</label>
+                                        <input type="text" id="pharmacyQuartier" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Quartier / Adresse">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+                                        <input type="tel" id="pharmacyTelephone" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Ex: 011 XX XX XX">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Boîte Postale</label>
+                                        <input type="text" id="pharmacyBP" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="BP">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Horaires</label>
+                                        <input type="text" id="pharmacyHoraires" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Ex: Lun-Sam: 8h-20h">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Services</label>
+                                        <input type="text" id="pharmacyServices" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Ex: Parapharmacie, Conseil">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Propriétaire</label>
+                                        <input type="text" id="pharmacyProprietaire" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Nom du propriétaire">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Type d'établissement</label>
+                                        <select id="pharmacyType" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                            <option value="pharmacie_generale">Pharmacie générale</option>
+                                            <option value="depot_pharmaceutique">Dépôt pharmaceutique</option>
+                                            <option value="pharmacie_hospitaliere">Pharmacie hospitalière</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Catégorie / Emplacement</label>
+                                        <select id="pharmacyCategorie" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                                            <option value="standard">Emplacement standard</option>
+                                            <option value="gare">Proche de la gare</option>
+                                            <option value="hopital">Proche de l'hôpital</option>
+                                            <option value="aeroport">Proche de l'aéroport</option>
+                                            <option value="centre_commercial">Centre commercial</option>
+                                            <option value="marche">Proche du marché</option>
+                                            <option value="centre_ville">Centre-ville</option>
+                                            <option value="zone_residentielle">Zone résidentielle</option>
+                                        </select>
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" id="pharmacyIsGarde" class="w-4 h-4 text-purple-600 rounded focus:ring-purple-500">
+                                            <span class="text-sm text-gray-700">Cette pharmacie est de garde 24h/24</span>
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Coordonnées GPS</label>
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                                            <p class="text-xs text-blue-800">Selectionnez une ville ou cliquez sur le bouton pour recuperer automatiquement votre position</p>
+                                        </div>
+                                        <select id="citySelect" onchange="selectCity(this.value)" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-3">
+                                            <option value="">-- Selectionner une ville --</option>
+                                            {% for ville in villes %}
+                                            <option value="{{ ville }}">{{ ville }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="button" id="getLocationBtn" onclick="getPharmacyLocation()" class="w-full py-2.5 bg-blue-600 text-white font-medium rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition mb-3">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            </svg>
+                                            <span id="getLocationBtnText">Récupérer ma position actuelle</span>
+                                        </button>
+                                        <div class="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">Latitude</label>
+                                                <input type="text" id="pharmacyLat" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Ex: 0.4162">
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs text-gray-500 mb-1">Longitude</label>
+                                                <input type="text" id="pharmacyLng" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm" placeholder="Ex: 9.4673">
+                                            </div>
+                                        </div>
+                                        <p id="locationStatus" class="text-xs text-gray-500 mt-2 hidden"></p>
+                                    </div>
+                                    
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Commentaire additionnel</label>
+                                        <textarea id="pharmacyComment" rows="2" class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Informations supplémentaires..."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t pt-4">
+                                <p class="text-xs text-gray-500 mb-3">Informations de contact (optionnel)</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <input type="text" id="suggestionName" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Votre nom">
+                                    </div>
+                                    <div>
+                                        <input type="tel" id="suggestionPhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Téléphone">
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <input type="email" id="suggestionEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Email">
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="w-full py-3 bg-purple-600 text-white font-semibold rounded-xl flex items-center justify-center gap-2 hover:bg-purple-700 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                                </svg>
+                                <span id="submitBtnText">Envoyer ma suggestion</span>
+                            </button>
+                        </form>
+                        
+                        <div id="suggestionSuccess" class="hidden bg-white rounded-xl shadow-sm border border-green-200 p-6 text-center">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Merci pour votre contribution !</h3>
+                            <p class="text-gray-600 mb-4">Nous avons bien reçu votre message et nous l'examinerons dans les plus brefs délais.</p>
+                            <button onclick="resetSuggestionForm()" class="px-6 py-2 bg-purple-100 text-purple-700 font-medium rounded-lg hover:bg-purple-200 transition">
+                                Envoyer une autre suggestion
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg lg:hidden z-[1100]">
+            <div class="flex justify-around py-2">
+                <button onclick="switchTab('pharmacies')" class="mobile-tab-btn active flex flex-col items-center py-1 px-2" data-tab="pharmacies">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                    <span class="text-[10px] mt-0.5">Pharmacies</span>
+                </button>
+                <button onclick="switchTab('garde')" class="mobile-tab-btn flex flex-col items-center py-1 px-2" data-tab="garde">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-[10px] mt-0.5">Garde</span>
+                </button>
+                <button onclick="switchTab('map')" class="mobile-tab-btn flex flex-col items-center py-1 px-2" data-tab="map">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                    </svg>
+                    <span class="text-[10px] mt-0.5">Carte</span>
+                </button>
+                <button onclick="switchTab('urgences')" class="mobile-tab-btn flex flex-col items-center py-1 px-2" data-tab="urgences">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                    </svg>
+                    <span class="text-[10px] mt-0.5">Urgences</span>
+                </button>
+                <button onclick="switchTab('suggestions')" class="mobile-tab-btn flex flex-col items-center py-1 px-2" data-tab="suggestions">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                    </svg>
+                    <span class="text-[10px] mt-0.5">Suggest.</span>
+                </button>
+            </div>
+        </nav>
+    </div>
+
+    <button id="gpsLocateBtn" onclick="locateNearestGardePharmacy()" 
+            class="hidden fixed bottom-24 right-4 lg:bottom-8 lg:right-8 z-[1200] w-11 h-11 bg-red-600 hover:bg-red-700 text-white rounded-full shadow-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+            title="Localiser les pharmacies de garde près de moi"
+            style="pointer-events: auto;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+    </button>
+
+    <div id="adModal" class="fixed inset-0 bg-black/70 z-[2000] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl">
+            <div id="adMediaContainer" class="w-full bg-gray-100">
+            </div>
+            <div class="p-5">
+                <h3 id="adTitle" class="text-xl font-bold text-gray-800 mb-2"></h3>
+                <p id="adDescription" class="text-gray-600 text-sm mb-4"></p>
+                <div class="flex flex-col gap-3">
+                    <a id="adCtaBtn" href="#" target="_blank" onclick="handleAdClick()" 
+                       class="w-full py-3 bg-red-600 text-white font-semibold rounded-xl text-center hover:bg-red-700 transition">
+                        En savoir plus
+                    </a>
+                    <button id="adSkipBtn" onclick="closeAdModal()" disabled
+                            class="w-full py-2.5 bg-gray-200 text-gray-500 font-medium rounded-xl transition cursor-not-allowed">
+                        Passer la pub (<span id="adCountdown">5</span>s)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pharmacyModal" class="fixed inset-0 bg-black/50 z-[1500] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto">
+            <div class="p-4 border-b sticky top-0 bg-white flex items-center justify-between">
+                <h3 id="modalTitle" class="text-lg font-semibold text-gray-800"></h3>
+                <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="modalContent" class="p-4"></div>
+        </div>
+    </div>
+
+    <!-- Footer avec étoile du drapeau marocain -->
+    <footer class="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg lg:hidden py-3 px-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <svg class="w-6 h-6" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="300" height="200" fill="#CE1126"/>
+                    <g transform="translate(150, 100)">
+                        <polygon points="0,-40 12,-12 40,-12 24,12 32,40 0,24 -32,40 -24,12 -40,-12 -12,-12" fill="#006B3F"/>
+                    </g>
+                </svg>
+                <span class="text-xs font-medium">UrgenceMaroc.com</span>
+            </div>
+            <div class="text-xs text-white/70">© 2025 Tous droits réservés</div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/config.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pharmacy.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/forms.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/popups.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/ads.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
